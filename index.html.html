@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ann’s iPhone 18 · Interactive AU Simulator</title>
+<style>
+:root{
+  --ink:#17171b;--muted:#85858d;--paper:#f6f6f8;--line:#e7e7eb;
+  --blue:#1685ff;--green:#35c759;--glass:rgba(255,255,255,.22);
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(circle at 20% 15%,#d8d1ef 0,transparent 35%),
+             radial-gradient(circle at 85% 80%,#f1d6d9 0,transparent 34%),#e8e8ed;
+  color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{width:100%;display:flex;flex-direction:column;align-items:center;gap:14px}
+.caption{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#65616d}
+.phone{width:min(390px,94vw);height:min(820px,calc(100dvh - 100px));min-height:590px;
+  padding:9px;border-radius:48px;background:#171719;box-shadow:0 28px 70px #26203345, inset 0 0 0 1px #555;position:relative}
+.screen{height:100%;width:100%;border-radius:39px;overflow:hidden;position:relative;background:#f8f8fa}
+.dynamic-island{position:absolute;z-index:30;top:10px;left:50%;transform:translateX(-50%);width:106px;height:29px;background:#080809;border-radius:20px}
+.status{height:44px;position:absolute;z-index:25;top:0;left:0;right:0;padding:12px 23px 0;display:flex;justify-content:space-between;align-items:flex-start;font-size:12px;font-weight:700;pointer-events:none;color:inherit}
+.status .right{display:flex;gap:5px;align-items:center}
+.battery{height:10px;width:19px;border:1.4px solid currentColor;border-radius:3px;position:relative}
+.battery:before{content:"";position:absolute;left:2px;top:2px;bottom:2px;width:11px;background:currentColor;border-radius:1px}
+.battery:after{content:"";position:absolute;right:-3px;top:2px;width:2px;height:4px;background:currentColor;border-radius:0 2px 2px 0}
+.view{position:absolute;inset:0;display:none;overflow:hidden}
+.view.active{display:block}
+.lock{color:#fff;text-align:center;background:
+ radial-gradient(ellipse at 25% 30%,#f8d7df 0,transparent 30%),
+ radial-gradient(ellipse at 75% 40%,#b7c5e7 0,transparent 36%),
+ radial-gradient(ellipse at 48% 80%,#8e82b8 0,transparent 42%),
+ linear-gradient(145deg,#494b70,#bd9eae 52%,#4c4d74)}
+.lock:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#00000016,transparent 30%,#17132855);pointer-events:none}
+.lock-content{position:absolute;z-index:2;top:18%;width:100%;padding:0 22px}
+.lock-date{font-size:15px;font-weight:500;letter-spacing:.02em}
+.lock-time{font-size:82px;font-weight:200;letter-spacing:-.07em;line-height:1.05;margin-top:5px}
+.lock-note{margin:34px auto 0;padding:13px 16px;border-radius:18px;text-align:left;background:#ffffff25;backdrop-filter:blur(16px);font-size:13px;max-width:300px}
+.lock-note b{display:block;margin-bottom:4px;font-size:12px}
+
+.lock-note{display:block;width:min(310px,88%);text-align:left;border:1px solid rgba(255,255,255,.25);cursor:pointer;color:white;font:inherit}
+.lock-note b{display:block;font-size:9px;letter-spacing:.12em;opacity:.78;margin-bottom:9px}
+.lock-note-row{display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.45}
+.lock-note-row strong{font-size:13px;font-weight:700}
+.mini-avatar{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#c9b5ef,#7d6ca7);font-weight:700;color:white}
+.note-chevron{margin-left:auto;font-size:24px;opacity:.6}
+button{ -webkit-tap-highlight-color:transparent}
+.app:active .icon,.round-btn:active{transform:scale(.94)}
+.icon{transition:transform .14s ease}
+
+.lock-bottom{position:absolute;z-index:2;bottom:22px;left:0;right:0;display:flex;justify-content:space-between;padding:0 27px;align-items:end}
+.round-btn{height:46px;width:46px;border-radius:50%;background:#ffffff26;backdrop-filter:blur(10px);border:1px solid #ffffff40;display:grid;place-items:center;font-size:19px}
+.unlock-hint{position:absolute;z-index:3;bottom:29px;left:50%;transform:translateX(-50%);font-size:11px;white-space:nowrap;opacity:.9}
+.home{background:linear-gradient(145deg,#d8d2eb,#b5c5df 50%,#e7cdd6)}
+.home:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 20% 22%,#ffffff75,transparent 35%),radial-gradient(ellipse at 90% 55%,#f4e2e6aa,transparent 35%)}
+.home-content{position:absolute;inset:0;padding:60px 19px 24px;display:flex;flex-direction:column;z-index:1}
+.home-date{font-size:14px;color:#363247;text-shadow:0 1px #fff7}
+.home-clock{font-size:38px;font-weight:600;letter-spacing:-.04em;color:#2e2a40;margin-bottom:22px}
+.app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 11px;align-content:start}
+.app{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:6px;color:#262431;font:inherit;font-size:10px;text-shadow:0 1px #ffffff75;cursor:pointer;padding:0;min-width:0}
+.icon{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:27px;box-shadow:0 5px 12px #29243a18;position:relative}
+.icon.messages{background:linear-gradient(#6ee17d,#24b74c)}
+.icon.phoneapp{background:linear-gradient(#5ee28b,#20b55b)}
+.icon.photos{background:#fff}
+.icon.notes{background:linear-gradient(#fff 0 24%,#ffdf67 24% 100%)}
+.icon.settings{background:linear-gradient(145deg,#bfc2ca,#777d89)}
+.icon.camera{background:linear-gradient(145deg,#5e6168,#16171a);color:white}
+.icon.mail{background:linear-gradient(#8fd7ff,#1685ff)}
+.icon.calendar{background:#fff;color:#ed4d4d;font-size:10px;font-weight:700}
+.icon.calendar strong{font-size:23px;color:#222}
+.icon.music{background:linear-gradient(145deg,#f9b2cb,#d84d8a)}
+.icon.safari{background:linear-gradient(145deg,#a8e8ff,#1885e8)}
+.icon.reminders{background:#fff}
+.icon.social{background:linear-gradient(145deg,#7a64b9,#e17da6);color:#fff}
+.dock{margin-top:auto;padding:11px 13px;display:flex;justify-content:space-around;gap:13px;border-radius:24px;background:#ffffff62;backdrop-filter:blur(20px)}
+.dock .app{font-size:0}
+.dock .icon{width:51px;height:51px}
+.app-view{background:var(--paper);color:var(--ink)}
+.app-header{height:86px;padding:48px 18px 10px;display:flex;align-items:end;justify-content:space-between;background:#f8f8fa;position:relative;z-index:2}
+.app-header h1{font-size:27px;letter-spacing:-.04em;margin:0;font-weight:750}
+.back{border:0;background:none;color:var(--blue);font-size:15px;cursor:pointer;padding:5px 0}
+.header-action{border:0;background:none;color:var(--blue);font-size:14px;cursor:pointer}
+.search{margin:10px 13px;padding:9px 12px;background:#e9e9ee;border-radius:11px;color:#85858d;font-size:14px}
+.contact-list{overflow:auto;height:calc(100% - 145px);padding:0 14px 30px}
+.contact{width:100%;border:0;border-bottom:1px solid var(--line);background:none;display:flex;align-items:center;gap:12px;padding:12px 2px;text-align:left;font:inherit;cursor:pointer}
+.avatar{width:43px;height:43px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#edc8d8,#9aa8d3);font-weight:650;color:#fff;flex-shrink:0}
+.contact-main{flex:1;min-width:0}
+.contact-name{font-size:15px;font-weight:600;margin-bottom:4px}
+.contact-preview{font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact-time{font-size:11px;color:#888;align-self:flex-start;margin-top:4px}
+.chat-view{position:absolute;inset:0;background:#f4f3f7;display:flex;flex-direction:column}
+.chat-top{padding:47px 13px 9px;background:#f8f8faeF;backdrop-filter:blur(15px);display:flex;align-items:center;gap:10px;border-bottom:1px solid #e6e5ea;z-index:2}
+.chat-top .avatar{width:33px;height:33px;font-size:12px}
+.chat-title{font-size:14px;font-weight:650;flex:1;text-align:center;margin-right:38px}
+.messages{flex:1;overflow:auto;padding:15px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.day-label{text-align:center;font-size:10px;color:#8e8e95;margin:7px 0}
+.bubble{max-width:82%;padding:9px 12px;border-radius:18px;font-size:14px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;position:relative}
+.bubble.them{align-self:flex-start;background:#fff;border-bottom-left-radius:5px}
+.bubble.me{align-self:flex-end;background:#1685ff;color:#fff;border-bottom-right-radius:5px}
+.bubble small{display:block;font-size:9px;opacity:.65;text-align:right;margin-top:4px}
+.composer{display:flex;gap:8px;align-items:center;padding:8px 10px 24px;background:#f8f8fa;border-top:1px solid #e6e5ea}
+.plus{width:29px;height:29px;border:1px solid #c7c7cc;color:#777;border-radius:50%;background:none;font-size:20px}
+.composer input{flex:1;min-width:0;border:1px solid #d6d6dc;border-radius:20px;padding:10px 13px;font-size:13px;outline:none;background:#fff}
+.send{border:0;background:var(--blue);color:#fff;border-radius:50%;width:31px;height:31px;font-size:15px}
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;height:64px;padding:9px 10px 20px;background:#fafafceF;border-top:1px solid #e6e6eb;display:flex;justify-content:space-around;z-index:3}
+.nav-item{font-size:10px;color:#888;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none}
+.nav-item span:first-child{font-size:19px}
+.nav-item.selected{color:var(--blue)}
+.simple-content{padding:15px;overflow:auto;height:calc(100% - 95px)}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.photo-tile{aspect-ratio:1;border:0;border-radius:3px;background:linear-gradient(145deg,#c7d2e9,#e9cbd9,#8d86b6);font-size:26px}
+.photo-tile:nth-child(3n){background:linear-gradient(145deg,#d7e4cf,#a2c6bd,#f1d7b7)}
+.photo-tile:nth-child(3n+1){background:linear-gradient(145deg,#f0d0d4,#c6b4db,#9aaed1)}
+.note-card{background:#fff5c7;border-radius:12px;padding:15px;margin-bottom:10px;font-size:13px;line-height:1.45}
+.settings-row{background:#fff;padding:14px;border-bottom:1px solid #eee;font-size:14px;display:flex;justify-content:space-between}
+.home-indicator{position:absolute;z-index:40;bottom:5px;left:50%;transform:translateX(-50%);height:5px;width:120px;border-radius:5px;background:#161616;opacity:.85;cursor:pointer}
+.home-indicator.light{background:#fff}
+.toast{position:absolute;z-index:50;top:52px;left:12px;right:12px;background:#ffffffdf;backdrop-filter:blur(16px);border:1px solid #fff;border-radius:14px;padding:12px 14px;font-size:12px;box-shadow:0 6px 20px #0001;display:none}
+.toast strong{display:block;margin-bottom:3px}
+@media(max-height:650px){.phone{height:calc(100dvh - 35px);min-height:0}.lock-content{top:13%}.lock-time{font-size:68px}.lock-note{margin-top:18px}}
+
+/* iOS 26-inspired Liquid Glass refresh — visual concept, not an official Apple mockup */
+:root{
+  --ink:#17171b;--muted:#8b8b93;--paper:#f5f5f9;--line:#e5e5eb;
+  --blue:#087cff;--green:#30d158;--glass:rgba(255,255,255,.34)
+}
+body{
+  background:radial-gradient(ellipse at 14% 12%,#e5d8ff 0,transparent 34%),
+             radial-gradient(ellipse at 86% 82%,#ffdce5 0,transparent 32%),
+             linear-gradient(145deg,#e9edf6,#dfe1eb 52%,#f1e9f1);
+  padding:28px 14px;
+}
+.caption{font-size:10px;font-weight:700;letter-spacing:.22em;color:#686675}
+.phone{
+  width:min(402px,95vw);height:min(852px,calc(100dvh - 104px));min-height:590px;
+  padding:7px;border-radius:57px;
+  background:linear-gradient(135deg,#f4f3f6 0%,#9b9ca4 13%,#27282d 24%,#09090b 70%,#a6a6ae 90%,#f5f4f7 100%);
+  box-shadow:0 36px 85px #28243e42,0 8px 20px #28243e1f,inset 0 0 0 1px #ffffffb0,inset 0 0 0 3px #34353a;
+}
+.screen{border-radius:50px;background:#f6f6fa;isolation:isolate}
+.dynamic-island{top:11px;width:118px;height:34px;border-radius:24px;background:#050506;box-shadow:inset 0 1px 1px #ffffff15,0 0 0 1px #0002}
+.status{height:49px;padding:14px 25px 0;font-size:12px;letter-spacing:-.01em}
+.lock{
+ background:radial-gradient(ellipse at 18% 18%,#f9d9ed 0,transparent 29%),
+ radial-gradient(ellipse at 78% 29%,#c8d7ff 0,transparent 34%),
+ radial-gradient(ellipse at 46% 78%,#a89ae8 0,transparent 43%),
+ radial-gradient(ellipse at 90% 90%,#f5c6d9 0,transparent 38%),
+ linear-gradient(150deg,#67648f,#b8a5d4 48%,#5b5b87);
+}
+.lock:after{background:linear-gradient(180deg,#1b18300a 0%,#201a3c00 45%,#19142e66 100%)}
+.lock-content{top:16%;padding:0 18px}
+.lock-date{font-size:15px;font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 8px #30264a22}
+.lock-time{font-size:clamp(82px,23vw,102px);font-weight:250;letter-spacing:-.075em;line-height:.98;margin-top:8px;text-shadow:0 2px 18px #352a5520}
+.lock-note{margin-top:34px;padding:14px 16px;border-radius:23px;background:linear-gradient(135deg,#ffffff42,#ffffff20);border:1px solid #ffffff4a;box-shadow:inset 0 1px 0 #ffffff50,0 10px 35px #27204412;backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6)}
+.lock-note b{font-size:10px;letter-spacing:.09em;color:#ffffffd9}
+.lock-bottom{bottom:28px;padding:0 25px}
+.round-btn{width:49px;height:49px;background:#ffffff20;border:1px solid #ffffff50;box-shadow:inset 0 1px 0 #ffffff45;backdrop-filter:blur(24px);font-size:20px}
+.unlock-hint{bottom:32px;font-size:11px;font-weight:500;letter-spacing:.02em}
+.home{background:radial-gradient(ellipse at 10% 10%,#f5e9ff 0,transparent 33%),radial-gradient(ellipse at 90% 28%,#d7e6ff 0,transparent 36%),radial-gradient(ellipse at 42% 84%,#f7d8e6 0,transparent 38%),linear-gradient(145deg,#c4c9ee,#a9c2e6 52%,#e7c5d9)}
+.home:before{background:radial-gradient(ellipse at 24% 20%,#ffffff70,transparent 38%),radial-gradient(ellipse at 82% 66%,#fff8,transparent 33%);filter:blur(2px)}
+.home-content{padding:67px 21px 27px}
+.home-date{font-size:14px;font-weight:600;color:#302d43;text-shadow:0 1px 8px #ffffff60}
+.home-clock{font-size:42px;font-weight:650;letter-spacing:-.055em;color:#29263c;margin:0 0 23px;text-shadow:0 1px 8px #ffffff50}
+.app-grid{gap:23px 10px}
+.app{font-size:10.5px;font-weight:500;gap:7px;color:#28263a;text-shadow:0 1px 5px #ffffff88}
+.icon{width:57px;height:57px;border-radius:17px;font-size:28px;box-shadow:0 7px 16px #29243a20,inset 0 1px 0 #ffffff65;overflow:hidden}
+.icon.messages,.icon.phoneapp,.icon.mail,.icon.safari,.icon.music,.icon.social{border:1px solid #ffffff52}
+.icon.messages{background:linear-gradient(155deg,#65ec87,#13b947)}
+.icon.phoneapp{background:linear-gradient(155deg,#70e69a,#16b955)}
+.icon.photos{background:linear-gradient(145deg,#fff,#f5f5f7)}
+.icon.notes{background:linear-gradient(#fff 0 25%,#ffe46b 25% 100%)}
+.icon.settings{background:linear-gradient(145deg,#d8d9df,#737986)}
+.icon.camera{background:linear-gradient(145deg,#6f727a,#17181d);color:#fff}
+.icon.mail{background:linear-gradient(145deg,#a9e5ff,#1685ff)}
+.icon.calendar{background:linear-gradient(#fff,#fff);font-size:9px;color:#f34c56}
+.icon.music{background:linear-gradient(145deg,#ffb5d5,#d63889)}
+.icon.safari{background:linear-gradient(145deg,#c4f1ff,#1886ee)}
+.icon.reminders{background:linear-gradient(145deg,#fff,#f6f6fa)}
+.icon.social{background:linear-gradient(145deg,#6557b7,#df5999 65%,#ffb56e)}
+.dock{padding:12px 12px calc(12px + env(safe-area-inset-bottom));border-radius:30px;background:linear-gradient(135deg,#ffffff62,#ffffff35);border:1px solid #ffffff66;box-shadow:inset 0 1px 0 #ffffff70,0 10px 25px #39304f10;backdrop-filter:blur(30px) saturate(1.7);-webkit-backdrop-filter:blur(30px) saturate(1.7)}
+.dock .icon{width:53px;height:53px;border-radius:17px}
+.app-view{background:#f5f5f9}
+.app-header{height:100px;padding:54px 19px 12px;background:#f7f7f9eF;backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5)}
+.app-header h1{font-size:30px;letter-spacing:-.055em;font-weight:750}
+.back{font-size:15px;font-weight:500}
+.search{margin:11px 14px;padding:10px 13px;background:#e9e9ef;border-radius:13px;color:#85858d;font-size:14px}
+.contact-list{height:calc(100% - 159px);padding:0 15px 30px}
+.contact{padding:13px 2px;border-bottom:1px solid #e6e6eb}
+.avatar{background:linear-gradient(145deg,#eac8db,#9aa8d7);box-shadow:inset 0 1px 0 #ffffff75}
+.chat-view{background:#f4f4f8}
+.chat-top{padding:53px 13px 10px;background:#f8f8f9eF;backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px)}
+.chat-top .avatar{width:34px;height:34px}
+.bubble{font-size:14px;padding:10px 13px;border-radius:20px;line-height:1.38}
+.bubble.them{background:#e9e9ee;border-bottom-left-radius:6px}
+.bubble.me{background:linear-gradient(145deg,#1685ff,#0875ed);border-bottom-right-radius:6px}
+.composer{padding:9px 11px calc(26px + env(safe-area-inset-bottom));background:#f8f8faeF;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.plus{width:31px;height:31px;background:#fff;border-color:#d4d4db}
+.composer input{padding:11px 14px;border-radius:23px;background:#ffffff;border-color:#d8d8df}
+.send{background:linear-gradient(145deg,#1685ff,#0875ed);width:32px;height:32px}
+.bottom-nav{background:#f8f8faeF;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.home-indicator{width:135px;height:5px;bottom:7px}
+.toast{border-radius:19px;background:#fffffff0;border:1px solid #ffffffb0;box-shadow:0 12px 34px #0002;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+@media(max-width:430px){body{padding:12px 0}.caption{margin-top:2px}.phone{width:min(402px,97vw);height:min(852px,calc(100dvh - 78px));min-height:570px;padding:6px;border-radius:51px}.screen{border-radius:45px}.dynamic-island{top:10px}.home-content{padding-left:17px;padding-right:17px}.app-grid{gap:20px 8px}.icon{width:53px;height:53px;border-radius:16px}.dock .icon{width:50px;height:50px}}
+@media(max-height:650px){.phone{height:calc(100dvh - 35px);min-height:0}.lock-content{top:12%}.lock-time{font-size:68px}.lock-note{margin-top:16px}.home-content{padding-top:55px}.home-clock{margin-bottom:12px}.app-grid{gap:12px 8px}}
+@media(prefers-reduced-motion:no-preference){.view.active{animation:screen-in .18s ease-out}@keyframes screen-in{from{opacity:.82}to{opacity:1}}.icon,.round-btn{transition:transform .16s ease,filter .16s ease}.app:active .icon,.round-btn:active{transform:scale(.94);filter:brightness(1.04)}}
+
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="caption">ANN’S IPHONE 18 · INTERACTIVE AU</div>
+  <div class="phone">
+    <div class="screen" id="screen">
+      <div class="dynamic-island"></div>
+      <div class="status" id="status"><span id="status-time">9:41</span><span class="right">●●● <span>Wi-Fi</span> <span class="battery"></span></span></div>
+
+      <section class="view lock active" id="lock">
+        <div class="lock-content">
+          <div class="lock-date" id="lock-date">Wednesday, October 21</div>
+          <div class="lock-time" id="lock-time">9:41</div>
+          <button class="lock-note" type="button" onclick="event.stopPropagation(); openChatFromLock(0)"><b>MESSAGES · NOW</b><span class="lock-note-row"><span class="mini-avatar">H</span><span><strong>Hanta</strong><br>Are you awake?</span><span class="note-chevron">›</span></span></button>
+        </div>
+        <div class="lock-bottom"><button class="round-btn" aria-label="Flashlight">◉</button><button class="round-btn" aria-label="Camera" onclick="openApp('Camera')">◎</button></div>
+        <div class="unlock-hint">Tap anywhere to unlock ↑</div>
+      </section>
+
+      <section class="view home" id="home">
+        <div class="home-content">
+          <div class="home-date" id="home-date">Wednesday, October 21</div>
+          <div class="home-clock" id="home-clock">9:41</div>
+          <div class="app-grid">
+            <button class="app" onclick="openApp('Messages')"><span class="icon messages">●</span>Messages</button>
+            <button class="app" onclick="openApp('Phone')"><span class="icon phoneapp">☎</span>Phone</button>
+            <button class="app" onclick="openApp('Photos')"><span class="icon photos">🌈</span>Photos</button>
+            <button class="app" onclick="openApp('Notes')"><span class="icon notes">📝</span>Notes</button>
+            <button class="app" onclick="openApp('Calendar')"><span class="icon calendar">WED<strong>21</strong></span>Calendar</button>
+            <button class="app" onclick="openApp('Camera')"><span class="icon camera">◉</span>Camera</button>
+            <button class="app" onclick="openApp('Mail')"><span class="icon mail">✉</span>Mail</button>
+            <button class="app" onclick="openApp('Settings')"><span class="icon settings">⚙</span>Settings</button>
+            <button class="app" onclick="openApp('Safari')"><span class="icon safari">🧭</span>Safari</button>
+            <button class="app" onclick="openApp('Music')"><span class="icon music">♫</span>Music</button>
+            <button class="app" onclick="openApp('Reminders')"><span class="icon reminders">☑️</span>Reminders</button>
+            <button class="app" onclick="openApp('Instagram')"><span class="icon social">◎</span>Instagram</button>
+          </div>
+          <div class="dock">
+            <button class="app" onclick="openApp('Phone')"><span class="icon phoneapp">☎</span></button>
+            <button class="app" onclick="openApp('Messages')"><span class="icon messages">●</span></button>
+            <button class="app" onclick="openApp('Safari')"><span class="icon safari">🧭</span></button>
+            <button class="app" onclick="openApp('Music')"><span class="icon music">♫</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view app-view" id="appview">
+        <div class="app-header"><button class="back" onclick="goHome()">‹ Home</button><h1 id="app-title">Messages</h1><button class="header-action" id="header-action" onclick="showToast('Demo mode','Edit the sample content in index.html to personalize this phone.')">Edit</button></div>
+        <div id="app-body"></div>
+      </section>
+
+      <section class="view" id="chatview">
+        <div class="chat-view">
+          <div class="chat-top"><button class="back" onclick="openApp('Messages')">‹ Messages</button><div class="avatar" id="chat-avatar">H</div><div class="chat-title" id="chat-title">Hanta</div></div>
+          <div class="messages" id="chat-messages"></div>
+          <form class="composer" id="composer"><button class="plus" type="button" onclick="showToast('Attachments','This is a visual demo. You can customize this action later.')">+</button><input id="message-input" placeholder="iMessage" autocomplete="off"><button class="send" type="submit">↑</button></form>
+        </div>
+      </section>
+
+      <div class="toast" id="toast"><strong id="toast-title">Notification</strong><span id="toast-text"></span></div>
+      <div class="home-indicator" id="home-indicator" title="Return to Home" onclick="goHome()"></div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#716d79;text-align:center;max-width:340px;line-height:1.5">An interactive fictional iPhone concept. Tap the lock-screen notification, explore the apps, and open conversations.</div>
+</div>
+<script>
+const contacts = [
+ {name:"Hanta", initials:"H", time:"9:38", preview:"Are you awake?", messages:[
+  ["them","Morning, Aubry. Are you awake?","9:36"],
+  ["me","unfortunately yes. what do you want, old man","9:37"],
+  ["them","For you to be nice to me before 10 a.m.","9:37"],
+  ["me","can't promise something unrealistic","9:38"]
+ ]},
+ {name:"Jian", initials:"J", time:"Yesterday", preview:"Don't forget to call me.", messages:[
+  ["them","Don't forget to call me when you're free.","Yesterday"],
+  ["me","i'm always free for you (lie)","Yesterday"],
+  ["them","Aubry.","Yesterday"],
+  ["me","okay okay i'll call 😭","Yesterday"]
+ ]},
+ {name:"Zico", initials:"Z", time:"Yesterday", preview:"sent you 3 photos", messages:[
+  ["them","I found the photos from last weekend.","Yesterday"],
+  ["them","sent you 3 photos","Yesterday"],
+  ["me","WAIT the one where i look expensive????","Yesterday"],
+  ["them","You were holding a paper cup.","Yesterday"]
+ ]},
+ {name:"Rui", initials:"R", time:"Mon", preview:"Dad asked about Sunday.", messages:[
+  ["them","Dad asked if you're coming on Sunday.","Mon"],
+  ["me","is there food","Mon"],
+  ["them","That's your first question?","Mon"],
+  ["me","it's an important question","Mon"]
+ ]},
+ {name:"Jeka", initials:"J", time:"Mon", preview:"bro you're so embarrassing", messages:[
+  ["them","bro you're so embarrassing","Mon"],
+  ["me","and yet you keep texting me","Mon"],
+  ["them","for research purposes","Mon"]
+ ]}
+];
+let activeContact = null;
+const $ = id => document.getElementById(id);
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id).classList.add('active');
+ $('status').style.color=(id==='lock')?'white':'#111';$('home-indicator').classList.toggle('light',id==='lock');}
+function unlock(){showView('home')}
+$('lock').addEventListener('click', e=>{if(!e.target.closest('button'))unlock()});
+$('lock-time').addEventListener('click',unlock);
+function goHome(){activeContact=null;showView('home')}
+function openApp(name){
+ showView('appview');$('app-title').textContent=name;$('header-action').style.display='block';$('header-action').textContent=name==='Messages'?'Edit':name==='Photos'?'Select':'•••';
+ const body=$('app-body');body.innerHTML='';
+ if(name==='Messages'){
+   $('header-action').onclick=()=>showToast('Messages','Tap a conversation to open it. Edit contacts and messages in index.html.');
+   body.innerHTML='<div class="search">⌕　Search</div><div class="contact-list" id="contact-list"></div><div class="bottom-nav"><button class="nav-item selected"><span>▤</span>Messages</button><button class="nav-item" onclick="showToast(\'Contacts\',\'Your fictional contacts live in Messages for this demo.\')"><span>♙</span>Contacts</button></div>';
+   const list=$('contact-list');
+   contacts.forEach((c,i)=>{const b=document.createElement('button');b.className='contact';b.innerHTML=`<span class="avatar">${c.initials}</span><span class="contact-main"><span class="contact-name">${c.name}</span><span class="contact-preview">${c.preview}</span></span><span class="contact-time">${c.time}</span>`;b.onclick=()=>openChat(i);list.appendChild(b)});
+ } else if(name==='Phone'){
+   $('header-action').style.display='none';
+   body.innerHTML='<div class="simple-content"><h2>Favorites</h2>'+contacts.slice(0,3).map(c=>`<div class="settings-row"><span>👤　${c.name}</span><span style="color:#1685ff">☎</span></div>`).join('')+'<h2>Recents</h2><p style="color:#888;font-size:13px">Your recent calls will appear here.</p><div style="text-align:center;font-size:34px;margin-top:35px">⌨</div><p style="text-align:center;color:#888">Keypad · demo</p></div>';
+ } else if(name==='Photos'){
+   $('header-action').onclick=()=>showToast('Photos','Replace these colorful placeholders with your own images in the code.');
+   body.innerHTML='<div class="simple-content"><h2>Library</h2><p style="color:#888;font-size:12px">Recent Days</p><div class="photo-grid">'+Array.from({length:18},(_,i)=>`<button class="photo-tile" onclick="showToast('Photo ${i+1}','Demo photo placeholder. Add your own image assets later.')">${['☁','♡','✦','🌷','☀','♫'][i%6]}</button>`).join('')+'</div></div>';
+ } else if(name==='Notes'){
+   $('header-action').onclick=()=>showToast('Notes','Add or edit note cards in the HTML source.');
+   body.innerHTML='<div class="simple-content"><h2>Notes</h2><div class="note-card"><b>Sunday brunch</b><br>Remember to ask Hanta what time he is picking me up.<br><small>Today · 9:12 AM</small></div><div class="note-card"><b>Things to do</b><br>□ Call Jian<br>□ Return Zico’s jacket<br>□ Buy matcha ice cream</div><div class="note-card"><b>Draft</b><br>Some things are easier to joke about than explain.</div></div>';
+ } else if(name==='Settings'){
+   $('header-action').style.display='none';
+   body.innerHTML='<div class="simple-content"><div style="display:flex;align-items:center;gap:12px;padding:18px;background:white;border-radius:14px;margin-bottom:18px"><div class="avatar" style="width:56px;height:56px">A</div><div><b>Aubry</b><div style="font-size:12px;color:#888;margin-top:5px">Apple Account · demo</div></div></div>'+['Airplane Mode　　○','Wi-Fi　　Connected','Bluetooth　　On','Notifications　　›','Wallpaper　　›','General　　›','Privacy & Security　　›'].map(x=>`<div class="settings-row">${x}</div>`).join('')+'</div>';
+ } else {
+   $('header-action').style.display='none';
+   const content={Calendar:'<div class="simple-content"><h2>Wednesday 21</h2><div class="note-card">10:00 AM · Coffee with Jeka</div><div class="note-card">12:30 PM · Lunch</div><div class="note-card">7:00 PM · Keep the evening free</div></div>',Camera:'<div class="simple-content" style="background:#202024;color:white;height:calc(100% - 95px);display:grid;place-items:center;text-align:center"><div><div style="font-size:70px">◉</div><p>Camera preview</p><button onclick="showToast(\'Camera\',\'Camera is a visual placeholder in this prototype.\')" style="border:3px solid white;background:#ddd;width:58px;height:58px;border-radius:50%"></button></div></div>',Mail:'<div class="simple-content"><h2>Inbox</h2><div class="settings-row">Dad　　Sunday lunch</div><div class="settings-row">Manager　　Schedule update</div></div>',Safari:'<div class="simple-content"><div class="search">⌕　Search or enter website</div><h2>Favorites</h2><div class="photo-grid"><div class="note-card">News</div><div class="note-card">Work</div><div class="note-card">Music</div></div></div>',Music:'<div class="simple-content" style="text-align:center;padding-top:70px"><div style="font-size:90px">♫</div><h2>Now Playing</h2><p style="color:#888">A song for a fictional story</p><div style="font-size:28px;margin-top:35px">◀　Ⅱ　▶</div></div>',Reminders:'<div class="simple-content"><h2>Reminders</h2><div class="settings-row">○　Buy matcha ice cream</div><div class="settings-row">○　Call Jian</div><div class="settings-row">○　Text Hanta back</div></div>',Instagram:'<div class="simple-content"><h2>Instagram</h2><div class="note-card">📷　aubry.jpg<br><br>Sunday looked good on me, actually.</div><div class="photo-grid"><div class="photo-tile">♡</div><div class="photo-tile">✦</div><div class="photo-tile">☀</div></div></div>'};
+   body.innerHTML=content[name]||'<div class="simple-content"><h2>'+name+'</h2><p style="color:#888">This app is a placeholder in the demo.</p></div>';
+ }
+}
+function openChatFromLock(i){
+ unlock();
+ openChat(i);
+}
+function openChat(i){
+ activeContact=contacts[i];showView('chatview');$('chat-title').textContent=activeContact.name;$('chat-avatar').textContent=activeContact.initials;
+ const box=$('chat-messages');box.innerHTML='<div class="day-label">iMessage · Today</div>';
+ activeContact.messages.forEach(m=>addBubble(m[0],m[1],m[2],false));box.scrollTop=box.scrollHeight;
+}
+function addBubble(side,text,time,append=true){
+ const box=$('chat-messages');const div=document.createElement('div');div.className='bubble '+side;div.textContent=text;
+ const small=document.createElement('small');small.textContent=time||'Now';div.appendChild(small);box.appendChild(div);if(append)box.scrollTop=box.scrollHeight;
+}
+$('composer').addEventListener('submit',e=>{e.preventDefault();const input=$('message-input');const val=input.value.trim();if(!val||!activeContact)return;addBubble('me',val,'Now');input.value='';activeContact.preview=val;activeContact.time='Now';});
+function showToast(title,txt){$('toast-title').textContent=title;$('toast-text').textContent=txt;$('toast').style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>$('toast').style.display='none',2600)}
+function updateClock(){
+ const d=new Date();const time=d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+ $('status-time').textContent=time;$('lock-time').textContent=time;$('home-clock').textContent=time;
+ const date=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+ $('lock-date').textContent=date;$('home-date').textContent=date;
+}
+updateClock();setInterval(updateClock,30000);
+</script>
+</body>
+</html>
